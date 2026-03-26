@@ -93,7 +93,13 @@ jobs:
         run: |
           cd openwrt-src
           mkdir -p package/base-files/files/etc/config
-          printf "config interface 'loopback'\n\toption device 'lo'\n\toption proto 'static'\n\toption ipaddr '127.0.0.1'\n\toption netmask '255.0.0.0'\n\nconfig interface 'lan'\n\toption device 'eth0'\n\toption proto 'static'\n\toption ipaddr '192.168.10.251'\n\toption netmask '255.255.255.0'\n\toption gateway '192.168.10.1'\n\toption ip6assign '60'\n" > package/base-files/files/etc/config/network
+          printf "config interface 'loopback'\n\toption device 'lo'\n\toption proto 'static'\n\toption ipaddr '127.0.0.1'\n\toption netmask '255.0.0.0'\n\nconfig interface 'lan'\n\toption device 'eth0'\n\toption proto 'static'\n\toption ipaddr '192.168.10.251'\n\toption netmask '255.255.255.0'\n\toption gateway '192.168.10.1'\n\toption ip6assign '60'\n\nconfig interface 'wg0'\n\toption proto 'wireguard'\n\toption private_key 'your_private_key_here'\n\tlist addresses '10.0.0.2/24'\n\nconfig wireguard_wg0\n\toption public_key 'your_public_key_here'\n\toption endpoint_host 'your_endpoint_host'\n\toption endpoint_port '51820'\n\toption route_allowed_ips '1'\n\tlist allowed_ips '0.0.0.0/0'\n" > package/base-files/files/etc/config/network
+
+      - name: Configure firewall for VPN
+        run: |
+          cd openwrt-src
+          mkdir -p package/base-files/files/etc/config
+          printf "config zone\n\toption name 'lan'\n\tlist network 'lan'\n\toption input 'ACCEPT'\n\toption output 'ACCEPT'\n\toption forward 'ACCEPT'\n\nconfig zone\n\toption name 'wan'\n\tlist network 'wan'\n\toption input 'REJECT'\n\toption output 'ACCEPT'\n\toption forward 'REJECT'\n\toption masq '1'\n\toption mtu_fix '1'\n\nconfig zone\n\toption name 'vpn'\n\tlist network 'wg0'\n\toption input 'ACCEPT'\n\toption output 'ACCEPT'\n\toption forward 'ACCEPT'\n\toption masq '1'\n\nconfig forwarding\n\toption src 'lan'\n\tdest 'wan'\n\nconfig forwarding\n\toption src 'lan'\n\tdest 'vpn'\n\nconfig rule\n\toption name 'Allow-OpenVPN'\n\toption src 'wan'\n\toption dest_port '1194'\n\toption proto 'udp'\n\toption target 'ACCEPT'\n\nconfig rule\n\toption name 'Allow-WireGuard'\n\toption src 'wan'\n\toption dest_port '51820'\n\toption proto 'udp'\n\toption target 'ACCEPT'\n" > package/base-files/files/etc/config/firewall
 
       - name: Build OpenWrt
         env:
