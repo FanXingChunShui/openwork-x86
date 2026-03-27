@@ -322,5 +322,5 @@ jobs:
           bodyFile: ${{ env.BUILD_DIR }}/build-summary.txt
           draft: false
           prerelease: false
-          artifacts: ${{ env.BUILD_DIR }}/bin/targets/x86/64/*
+          artifacts: ${{ env.BUILD_DIR }}/bin/targets/x86/64/*.bin,${{ env.BUILD_DIR }}/bin/targets/x86/64/*.img.gz
           token: ${{ secrets.GITHUB_TOKEN }}
