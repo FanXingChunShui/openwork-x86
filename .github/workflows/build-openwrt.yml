@@ -133,11 +133,8 @@ jobs:
         name: Configure x86_64 build
         run: |
           cd "$BUILD_DIR"
-          echo "✓ Generating base configuration..."
-          make defconfig
-
           echo "✓ Applying x86_64 specific settings..."
-          cat >> .config << 'EOF'
+          cat > .config << 'EOF'
           CONFIG_TARGET_x86=y
           CONFIG_TARGET_x86_64=y
           CONFIG_TARGET_ROOTFS_EXT4FS=y
@@ -156,6 +153,11 @@ jobs:
           CONFIG_HZ=1000
           CONFIG_CCACHE=y
           CONFIG_KERNEL_CCACHE=y
+          CONFIG_PACKAGE_luci-app-ssr-plus=y
+          CONFIG_PACKAGE_dnsmasq-full=y
+          CONFIG_PACKAGE_iptables=y
+          CONFIG_PACKAGE_ipset=y
+          CONFIG_PACKAGE_kmod-ipt-nat=y
           EOF
 
           echo "✓ Finalizing configuration..."
@@ -172,15 +174,6 @@ jobs:
           ./scripts/feeds install -a -p luci-proto-wireguard || true
           ./scripts/feeds install -a -p luci-app-ddns || true
           ./scripts/feeds install -a -p ddns-scripts || true
-
-      - id: config-plugins
-        name: Configure plugins in .config
-        run: |
-          cd "$BUILD_DIR"
-          echo "◆ Adding helloworld packages to .config..."
-          cat >> .config << 'EOF'
-          CONFIG_PACKAGE_luci-app-ssr-plus=y
-          EOF
 
       - id: config-network
         name: Configure network interfaces
