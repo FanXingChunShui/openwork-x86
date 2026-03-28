@@ -155,21 +155,13 @@ jobs:
         run: |
           cd "$BUILD_DIR"
 
-          echo "◆ Installing Passwall2..."
-          rm -rf package/feeds/passwall2 2>/dev/null || true
+          echo "◆ Installing Passwall (successor to Passwall2)..."
+          rm -rf package/feeds/passwall 2>/dev/null || true
           git clone \
             --depth=1 \
-            https://github.com/Openwrt-Passwall/openwrt-passwall2.git \
-            package/feeds/passwall2
-          ./scripts/feeds install -a -p passwall2 || true
-
-          echo "◆ Installing Passwall2 dependencies..."
-          ./scripts/feeds install coreutils coreutils-base64 coreutils-nohup curl \
-            lua libuci-lua luci-compat luci-lib-jsonc luci-lua-runtime \
-            unzip resolveip tcping ip-full || true
-
-          echo "◆ Installing xray/v2ray packages..."
-          ./scripts/feeds install xray-core v2ray-geoip v2ray-geosite || true
+            https://github.com/Openwrt-Passwall/openwrt-passwall.git \
+            package/feeds/passwall
+          ./scripts/feeds install -a -p passwall || true
 
           echo "◆ Installing VPN & DDNS packages..."
           ./scripts/feeds install -a -p luci-app-openvpn || true
@@ -181,10 +173,10 @@ jobs:
         name: Configure plugins in .config
         run: |
           cd "$BUILD_DIR"
-          echo "◆ Adding Passwall2 packages to .config..."
+          echo "◆ Adding Passwall packages to .config..."
           cat >> .config << 'EOF'
-          CONFIG_PACKAGE_luci-app-passwall2=y
-          CONFIG_PACKAGE_passwall2=y
+          CONFIG_PACKAGE_luci-app-passwall=y
+          CONFIG_PACKAGE_passwall=y
           EOF
 
       - id: config-network
