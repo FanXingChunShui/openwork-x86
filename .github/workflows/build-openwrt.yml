@@ -163,6 +163,14 @@ jobs:
             package/feeds/passwall2
           ./scripts/feeds install -a -p passwall2 || true
 
+          echo "◆ Installing Passwall2 dependencies..."
+          ./scripts/feeds install coreutils coreutils-base64 coreutils-nohup curl \
+            lua libuci-lua luci-compat luci-lib-jsonc luci-lua-runtime \
+            unzip resolveip tcping ip-full || true
+
+          echo "◆ Installing xray/v2ray packages..."
+          ./scripts/feeds install xray-core v2ray-geoip v2ray-geosite || true
+
           echo "◆ Installing VPN & DDNS packages..."
           ./scripts/feeds install -a -p luci-app-openvpn || true
           ./scripts/feeds install -a -p luci-proto-wireguard || true
