@@ -263,9 +263,22 @@ jobs:
           cd "$BUILD_DIR"
           echo "Starting build with $MAKE_JOBS parallel job(s)..."
           make -j$MAKE_JOBS V=s 2>&1 | tee build.log
+          BUILD_EXIT_CODE=${PIPESTATUS[0]}
 
-          if [ ! -d "bin/targets/x86/64" ]; then
-            echo "❌ Error: Build output directory not found!"
+          echo ""
+          echo "========================================"
+          echo "Build exit code: $BUILD_EXIT_CODE"
+          echo "========================================"
+
+          # Check for actual firmware files
+          FIRM_FILES=$(find bin/targets -name "*.bin" -o -name "*.img" -o -name "*.img.gz" 2>/dev/null | wc -l)
+          echo "Firmware files found: $FIRM_FILES"
+
+          if [ "$BUILD_EXIT_CODE" -ne 0 ] || [ "$FIRM_FILES" -eq 0 ]; then
+            echo "❌ Build failed!"
+            echo ""
+            echo "Last 100 lines of build.log:"
+            tail -100 build.log
             exit 1
           fi
           echo "✓ Build completed successfully"
@@ -276,7 +289,7 @@ jobs:
 
       - id: summary
         name: Generate build summary
-        if: always()
+        if: success()
         run: |
           cd "$BUILD_DIR"
 
@@ -285,7 +298,7 @@ jobs:
             echo "Build Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
             echo "GitHub Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             echo ""
-            echo "Build Status: $([ -f bin/targets/x86/64/*.bin ] && echo '✓ SUCCESS' || echo '✗ FAILED')"
+            echo "Build Status: ✓ SUCCESS"
             echo ""
 
             if [ -d "bin/targets/x86/64" ]; then
