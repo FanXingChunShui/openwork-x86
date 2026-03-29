@@ -46,19 +46,6 @@ jobs:
       # PREPARATION PHASE
       # ============================================================================
 
-      - id: checkout
-        name: Checkout repository
-        uses: actions/checkout@v4
-
-      - id: setup-cache
-        name: Setup ccache
-        uses: actions/cache@v4
-        with:
-          path: ~/.ccache
-          key: ccache-${{ runner.os }}-${{ github.run_id }}
-          restore-keys: |
-            ccache-${{ runner.os }}-
-
       - id: install-deps
         name: Install build dependencies
         run: |
@@ -87,6 +74,19 @@ jobs:
           echo "CARGO_HOME=$CARGO_HOME" >> $GITHUB_ENV
           echo "RUSTUP_HOME=$RUSTUP_HOME" >> $GITHUB_ENV
           echo "PATH=$CARGO_HOME/bin:$PATH" >> $GITHUB_ENV
+
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@v4
+
+      - id: setup-cache
+        name: Setup ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            ccache-${{ runner.os }}-
 
       # ============================================================================
       # SOURCE & FEEDS PHASE
