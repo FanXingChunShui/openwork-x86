@@ -80,10 +80,13 @@ jobs:
             zlib1g-dev
 
           # Install Rust pre-built toolchain for x86_64
+          export CARGO_HOME="$HOME/.cargo"
+          export RUSTUP_HOME="$HOME/.rustup"
+          export PATH="$CARGO_HOME/bin:$PATH"
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal
-          echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
-          echo "CARGO_HOME=$HOME/.cargo" >> $GITHUB_ENV
-          echo "RUSTUP_HOME=$HOME/.rustup" >> $GITHUB_ENV
+          echo "CARGO_HOME=$CARGO_HOME" >> $GITHUB_ENV
+          echo "RUSTUP_HOME=$RUSTUP_HOME" >> $GITHUB_ENV
+          echo "PATH=$CARGO_HOME/bin:$PATH" >> $GITHUB_ENV
 
       # ============================================================================
       # SOURCE & FEEDS PHASE
