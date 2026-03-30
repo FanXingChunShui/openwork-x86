@@ -67,24 +67,21 @@ jobs:
           ./scripts/feeds update helloworld
           ./scripts/feeds install -a -p helloworld
 
-      - name: Configure build with default x86_64
+      - name: Prepare build config
         run: |
           cd openwrt
-          make defconfig
+          cat > .config << 'EOF'
+CONFIG_TARGET_x86_64=y
+CONFIG_TARGET_x86_64_generic=y
+CONFIG_TARGET_x86_64_DEVICE_generic=y
+EOF
 
-      - name: Enable required packages
+      - name: Build config tools and defconfig
         run: |
           cd openwrt
-          ./scripts/config/conf --enable PACKAGE_luci
-          ./scripts/config/conf --enable PACKAGE_luci-compat
-          ./scripts/config/conf --enable PACKAGE_luci-theme-bootstrap
-          ./scripts/config/conf --enable PACKAGE_luci-app-firewall
-          ./scripts/config/conf --enable PACKAGE_luci-app-qos
-          ./scripts/config/conf --enable PACKAGE_qos-scripts
-          ./scripts/config/conf --enable PACKAGE_luci-app-vpn
-          ./scripts/config/conf --enable PACKAGE_openvpn
-          ./scripts/config/conf --enable PACKAGE_luci-app-passwall
-          ./scripts/config/conf --enable PACKAGE_luci-app-ssr-plus
+          make scripts/config/conf
+          ./scripts/config/conf --defconfig=arch/Config.x86_64.config .config
+          make defconfig
 
       - name: Create custom files for network config
         run: |
