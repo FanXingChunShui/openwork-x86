@@ -67,10 +67,15 @@ jobs:
           ./scripts/feeds update helloworld
           ./scripts/feeds install -a -p helloworld
 
+      - name: Build config tools first
+        run: |
+          cd openwrt
+          make -j1 tools/config/conf V=s
+
       - name: Configure with x86_64 default
         run: |
           cd openwrt
-          make defconfig
+          ./scripts/config/conf --defconfig=arch/Config.x86_64.config .config
 
       - name: Create custom files for network config
         run: |
