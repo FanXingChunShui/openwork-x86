@@ -143,10 +143,9 @@ jobs:
                 # Check if this file contains the problematic setting
                 if grep -q "llvm.download-ci-llvm.*true" "$PATCH_FILE"; then
                   echo "Found in patch file: $PATCH_FILE"
-                  # Replace various forms of true value with if-unchanged
-                  sed -i 's/llvm\.download-ci-llvm[[:space:]]*=[[:space:]]*true/llvm.download-ci-llvm = "if-unchanged"/g' "$PATCH_FILE"
-                  sed -i "s/llvm\.download-ci-llvm[[:space:]]*=[[:space:]]*\(['\"]true['\"]\)/llvm.download-ci-llvm = \"if-unchanged\"/g" "$PATCH_FILE"
-                  sed -i 's/-llvm\.download-ci-llvm = true/-llvm.download-ci-llvm = "if-unchanged"/g' "$PATCH_FILE"
+                  # Replace various forms of true value with if-unchanged (without quotes for config.toml format)
+                  sed -i 's/llvm\.download-ci-llvm[[:space:]]*=[[:space:]]*true/llvm.download-ci-llvm = if-unchanged/g' "$PATCH_FILE"
+                  sed -i 's/download-ci-llvm[[:space:]]*=[[:space:]]*true/download-ci-llvm = if-unchanged/g' "$PATCH_FILE"
                   PATCHED=$((PATCHED + 1))
                   echo "✓ Patched $PATCH_FILE"
                 fi
@@ -167,11 +166,41 @@ jobs:
             ls -la "$RUST_PATCH_DIR"
             echo ""
             echo "Searching for llvm.download-ci-llvm = true (should find nothing after patching):"
-            grep "llvm.download-ci-llvm = true" "$RUST_PATCH_DIR"/*.patch 2>/dev/null || echo "✓ No 'true' values found - patch successful!"
+            grep "llvm.download-ci-llvm = true" "$RUST_PATCH_DIR"/*.patch 2>/dev/null || echo "✓ No 'true' values found in patches!"
             echo ""
             echo "Searching for llvm.download-ci-llvm = if-unchanged (should find it):"
-            grep "llvm.download-ci-llvm.*if-unchanged" "$RUST_PATCH_DIR"/*.patch 2>/dev/null | head -5 || echo "⚠ Note: might not exist yet in patches"
+            grep "llvm.download-ci-llvm.*if-unchanged" "$RUST_PATCH_DIR"/*.patch 2>/dev/null | head -5 || echo "⚠ Note: check if patch format is correct"
           fi
+
+      - id: patch-rust-config-direct
+        name: Directly patch Rust config files (fallback mechanism)
+        run: |
+          cd "$BUILD_DIR"
+          echo "✓ Applying direct config patches as fallback..."
+          
+          # Find all potential Rust config files that will be extracted and patch them
+          # This runs after feeds are installed but before the actual make build
+          
+          # Create a sed script to patch any config files that might be extracted
+          CONFIG_PATCH_SCRIPT='
+            s/llvm\.download-ci-llvm[[:space:]]*=[[:space:]]*true/llvm.download-ci-llvm = if-unchanged/g
+            s/download-ci-llvm[[:space:]]*=[[:space:]]*true/download-ci-llvm = if-unchanged/g
+            s/llvm\.download-ci-llvm[[:space:]]*=[[:space:]]*"true"/llvm.download-ci-llvm = if-unchanged/g
+            s/download-ci-llvm[[:space:]]*=[[:space:]]*"true"/download-ci-llvm = if-unchanged/g
+          '
+          
+          # Look for config files in the feeds/packages/lang/rust directory
+          if [ -d "feeds/packages/lang/rust" ]; then
+            echo "Patching Rust package config files..."
+            find feeds/packages/lang/rust -name "config.toml*" -type f | while read -r config_file; do
+              if [ -f "$config_file" ]; then
+                echo "  Patching: $config_file"
+                sed -i "$CONFIG_PATCH_SCRIPT" "$config_file" || true
+              fi
+            done
+          fi
+          
+          echo "✓ Direct patching complete"
 
       # ============================================================================
       # CONFIGURATION PHASE

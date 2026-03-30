@@ -1,5 +1,5 @@
---- a/config.toml.in
-+++ b/config.toml.in
+--- config.toml.in
++++ config.toml.in
 @@ -1,6 +1,6 @@
  # This is a configuration file intended for use on build systems
  
@@ -11,5 +11,3 @@
 +download-ci-llvm = if-unchanged
  
  [build]
-
-
