@@ -18,7 +18,6 @@ on:
 env:
   OPENWRT_VERSION: 'openwrt-25.12'
   OPENWRT_REPO: 'https://github.com/openwrt/openwrt.git'
-  TARGET_ARCH: 'x86_64'
 
 jobs:
   build:
@@ -67,6 +66,8 @@ jobs:
           ./scripts/feeds install -a -p helloworld
 
       - name: Configure build
+        env:
+          TARGET_ARCH: x86_64
         run: |
           cd openwrt
           make defconfig
