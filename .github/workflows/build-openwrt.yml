@@ -54,11 +54,6 @@ jobs:
         run: |
           git clone --depth=1 --branch=${{ env.OPENWRT_VERSION }} ${{ env.OPENWRT_REPO }} openwrt
 
-      - name: Update feeds
-        run: |
-          cd openwrt
-          ./scripts/feeds update -a
-
       - name: Add helloworld feed
         run: |
           cd openwrt
@@ -66,10 +61,10 @@ jobs:
           ./scripts/feeds update helloworld
           ./scripts/feeds install -a -p helloworld
 
-      - name: Configure with x86_64 default
+      - name: Configure build
         run: |
           cd openwrt
-          ./scripts/config/conf --defconfig=arch/Config.x86_64.config .config
+          make defconfig
 
       - name: Create custom files for network config
         run: |
