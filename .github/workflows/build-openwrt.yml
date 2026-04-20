@@ -16,13 +16,14 @@ on:
     - cron: '0 2 * * 0'
 
 env:
-  OPENWRT_VERSION: 'openwrt-25.12'
+  OPENWRT_VERSION: 'v25.12'
   OPENWRT_REPO: 'https://github.com/openwrt/openwrt.git'
+  TARGET_PROFILE: 'generic'
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 480
 
     steps:
       - name: Checkout repository
@@ -33,19 +34,20 @@ jobs:
           sudo apt update
           sudo apt install build-essential clang flex bison g++ gawk \
           gcc-multilib g++-multilib gettext git libncurses5-dev libssl-dev \
-          python3-setuptools rsync swig unzip zlib1g-dev file wget
+          python3-setuptools rsync swig unzip zlib1g-dev file wget \
+          libelf-dev ccache
 
       - name: Prepare ccache
         run: |
           mkdir -p ~/.cache/ccache
-          echo "max_size = 10G" > ~/.cache/ccache/ccache.conf
+          echo "max_size = 15G" > ~/.cache/ccache/ccache.conf
           echo "compression = true" >> ~/.cache/ccache/ccache.conf
 
       - name: Cache ccache
         uses: actions/cache@v4
         with:
           path: ~/.cache/ccache
-          key: openwrt-ccache-${{ runner.os }}-${{ hashFiles('**/build-openwrt.yml') }}
+          key: openwrt-ccache-${{ runner.os }}-${{ env.OPENWRT_VERSION }}
           restore-keys: |
             openwrt-ccache-${{ runner.os }}-
 
@@ -58,28 +60,72 @@ jobs:
           cd openwrt
           ./scripts/feeds update -a
 
-      - name: Add helloworld feed
+      - name: Add helloworld feed (for passwall2)
         run: |
           cd openwrt
           git clone --depth=1 https://github.com/fw876/helloworld.git feeds/helloworld
           ./scripts/feeds update helloworld
           ./scripts/feeds install -a -p helloworld
 
-      - name: Install ddns and openvpn packages
+      - name: Install additional packages
         run: |
           cd openwrt
-          ./scripts/feeds install luci-app-ddns ddns-scripts openvpn luci-app-openvpn
+          ./scripts/feeds install \
+            luci-app-ddns \
+            ddns-scripts \
+            openvpn \
+            luci-app-openvpn \
+            luci-app-passwall2 \
+            passwall2 \
+            kmod-tun \
+            liblzo \
+            libpthread
 
-      - name: Configure build
+      - name: Configure build with IPv6 and OpenVPN support
         run: |
           cd openwrt
           cat > .config << 'EOF'
           CONFIG_TARGET_x86=y
           CONFIG_TARGET_x86_generic=y
+          CONFIG_TARGET_x86_generic_Image=<none>
+
+          # IPv6 support
+          CONFIG_IPV6=y
+          CONFIG_PACKAGE_ipv6=y
+          CONFIG_PACKAGE_kmod-ipv6=y
+          CONFIG_PACKAGE_kmod-ip6tables=y
+          CONFIG_PACKAGE_libip6tc=y
+          CONFIG_PACKAGE_ip6tables=y
+          CONFIG_PACKAGE_ip6tables-zz standard=y
+          CONFIG_PACKAGE_odhcp6c=y
+          CONFIG_PACKAGE_odhcpd-ipv6only=y
+          CONFIG_PACKAGE_ra=y
+          CONFIG_DEVEL=y
+          CONFIG_BUSYBOX_CONFIG_NTPD=y
+          CONFIG_PACKAGE_dnsmasq=y
+          CONFIG_PACKAGE_dnsmasq_full=y
+
+          # OpenVPN support
+          CONFIG_PACKAGE_openvpn=y
+          CONFIG_PACKAGE_openvpn-easy-rsa=y
+          CONFIG_PACKAGE_openvpn-openssl=y
+          CONFIG_PACKAGE_luci-app-openvpn=y
+          CONFIG_PACKAGE_kmod-tun=y
+
+          # passwall2
+          CONFIG_PACKAGE_luci-app-passwall2=y
+          CONFIG_PACKAGE_passwall2=y
+
+          # Extra tools
+          CONFIG_PACKAGE_curl=y
+          CONFIG_PACKAGE_wget=y
+          CONFIG_PACKAGE_ca-certificates=y
+          CONFIG_PACKAGE_luci=y
+          CONFIG_PACKAGE_luci-ssl=y
           EOF
           make defconfig
 
-      - name: Create custom files for network config
+      - name: Create custom files for network config (IPv6 + LAN: 192.168.10.251)
         run: |
           mkdir -p openwrt/files/etc/config
           cat > openwrt/files/etc/config/network << 'EOF'
@@ -102,22 +148,51 @@ jobs:
             option gateway '192.168.10.1'
             list dns '8.8.8.8'
             list dns '114.114.114.114'
+            option ip6assign '60'
+            option ip6hint '10'
+
+          config interface 'wan'
+            option device 'eth1'
+            option proto 'dhcp'
+
+          config interface 'wan6'
+            option device 'eth1'
+            option proto 'dhcpv6'
+          EOF
+
+          cat > openwrt/files/etc/config/dhcp << 'EOF'
+          config dhcp 'lan'
+            option interface 'lan'
+            option start '100'
+            option limit '150'
+            option leasetime '12h'
+            option dhcp_option '6,192.168.10.1'
+            option ra 'server'
+            list ra_flags 'managed-config'
+            list ra_flags 'other-config'
+
+          config dhcp 'wan'
+            option interface 'wan'
+            option ignore '1'
           EOF
 
       - name: Build firmware
         run: |
           cd openwrt
-          make -j$(nproc) V=s
+          make -j$(nproc) V=s MAKE_JOBS=$(nproc)
 
       - name: Prepare artifacts
         run: |
           cd openwrt
+          echo "=== Built artifacts ==="
           find bin/targets/x86 -name "*.img.gz" -type f | head -5
+          echo "=== Artifact sizes ==="
+          find bin/targets/x86 -name "*.img.gz" -type f -exec ls -lh {} \;
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: openwrt-x86-64-firmware-${{ github.run_number }}
+          name: openwrt-x86-64-${{ env.OPENWRT_VERSION }}-firmware
           path: |
             openwrt/bin/targets/x86/**/*.img.gz
             openwrt/bin/targets/x86/**/*.bin
@@ -127,4 +202,4 @@ jobs:
       - name: Upload ccache statistics
         if: always()
         run: |
-          ccache -s
+          ccache -s || true
