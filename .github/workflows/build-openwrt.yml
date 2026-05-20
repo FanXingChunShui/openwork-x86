@@ -49,10 +49,10 @@ jobs:
             rsync subversion swig unzip zlib1g-dev file wget \
             ccache asciidoc bc bzip2 fastjar libelf-dev \
             intltool libglib2.0-dev libpcre3-dev libxml2-dev \
-            libxslt-dev ncurses-dev procps psiconv time \
-            xsltproc zlib-dev coccinelle libpcap-dev \
+            libxslt-dev ncurses-dev procps time \
+            xsltproc coccinelle libpcap-dev \
             autoconf automake autopoint curl help2man imagemagick \
-            texinfo texlive-base texi2html texi2pdf tidy \
+            texinfo texlive-base texi2html tidy \
 
       - name: Clone OpenWrt ${{ env.OPENWRT_VERSION }}
         run: |
