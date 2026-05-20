@@ -1,17 +1,25 @@
 name: Build OpenWrt 25.12
 
 on:
+  push:
+    branches:
+      - main
+      - master
+  schedule:
+    # 每周一凌晨 2:00 UTC 自动编译
+    - cron: "0 2 * * 1"
+
   workflow_dispatch:
     inputs:
       threads:
-        description: "Number of compile threads"
+        description: 'Number of compile threads'
         required: false
-        default: "4"
+        default: '4'
         type: string
       jobs:
-        description: "Number of parallel make jobs"
+        description: 'Number of parallel make jobs'
         required: false
-        default: "4"
+        default: '4'
         type: string
 
 env:
