@@ -49,7 +49,7 @@ jobs:
 
       - name: Clone OpenWrt ${{ env.OPENWRT_VERSION }}
         run: |
-          git clone --depth=1 --branch v${{ env.OPENWRT_VERSION }} \
+          git clone --depth=1 --branch ${{ env.OPENWRT_VERSION }} \
             ${{ env.OPENWRT_REPO }} openwrt-build
 
       - name: Add Passwall2 feed
