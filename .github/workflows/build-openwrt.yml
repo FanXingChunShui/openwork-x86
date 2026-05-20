@@ -53,6 +53,17 @@ jobs:
         run: |
           git clone --branch=${{ env.OPENWRT_VERSION }} ${{ env.OPENWRT_REPO }} openwrt
 
+      - name: Cache build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            openwrt/staging_dir
+            openwrt/build_dir/toolchain*
+          key: buildcache-${{ runner.os }}-${{ env.OPENWRT_VERSION }}-${{ hashFiles('.github/workflows/build-openwrt.yml') }}
+          restore-keys: |
+            buildcache-${{ runner.os }}-${{ env.OPENWRT_VERSION }}-
+            buildcache-${{ runner.os }}-
+
       - name: Update feeds
         run: |
           cd openwrt
@@ -227,6 +238,7 @@ jobs:
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: openwrt-x86-64-firmware-${{ github.run_number }}
           path: |
