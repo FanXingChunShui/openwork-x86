@@ -12,14 +12,14 @@ on:
   workflow_dispatch:
     inputs:
       threads:
-        description: 'Number of compile threads'
+        description: "Number of compile threads"
         required: false
-        default: '4'
+        default: "4"
         type: string
       jobs:
-        description: 'Number of parallel make jobs'
+        description: "Number of parallel make jobs"
         required: false
-        default: '4'
+        default: "4"
         type: string
 
 env:
@@ -43,16 +43,9 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq \
-            build-essential clang flex bison g++ gawk \
-            gcc-multilib gettext git libncurses-dev libssl-dev \
-            libtool make patch python3 python3-dev python3-pip \
-            rsync subversion swig unzip zlib1g-dev file wget \
-            ccache asciidoc bc bzip2 fastjar libelf-dev \
-            intltool libglib2.0-dev libpcre3-dev libxml2-dev \
-            libxslt-dev ncurses-dev procps time \
-            xsltproc coccinelle libpcap-dev \
-            autoconf automake autopoint curl help2man imagemagick \
-            texinfo texlive-base texi2html tidy \
+          bc binutils-gold bison build-essential ccache ecj fastjar file flex g++ gawk gcc-arm* gettext git help2man libbsd-dev libelf-dev libncurses-dev libssl-dev mtd-utils meson mold mtd-utils ninja-build pbzip2 pigz pkg-config python3-dev python3-setuptools rsync subversion swig texinfo time u-boot-tools unzip wget xsltproc xxd zlib1g-dev zstd build-essential clang flex bison g++ gawk \
+          gcc-multilib g++-multilib gettext git libncurses5-dev libssl-dev \
+          python3-setuptools rsync swig unzip zlib1g-dev file wget
 
       - name: Clone OpenWrt ${{ env.OPENWRT_VERSION }}
         run: |
